@@ -1,0 +1,184 @@
+<!DOCTyPE html>
+<meta charset="UTF-8">
+<html>
+
+<head>
+	<title>MATRIX</title>
+	<style type="text/css">
+		#canvas,
+		#canvas2 {
+			position: absolute;
+			top: 0;
+			left: 0;
+		}
+	</style>
+</head>
+
+<body>
+
+	<canvas id="canvas"></canvas>
+	<canvas id="canvas2"></canvas>
+
+	<script>
+
+		function Range(min, max) {
+			this.Min = min;
+			this.Max = max;
+		}
+
+		function Random(min, max) {
+			return Math.floor(Math.random() * (max - min + 1)) + min;
+		}
+
+		let canvas = document.getElementById('canvas');
+		let context = canvas.getContext('2d')
+
+		let matrix_height = window.innerHeight || document.body.clientHeight,   // the drawing height
+			matrix_width = window.innerWidth || document.body.clientWidth;      // the drawing width
+
+		// global variables
+		let matrix_speed = new Range(5, 20);      	         // trails speed range
+		let matrix_color = '#00ff72';             		     // trail main color
+		let matrix_background = 'black';          		     // the background color
+		let matrix_length = Range(60, 90);        		     // trails length range
+		let matrix_font = '8pt Courier';         		     // trails font and size
+		let matrix_trails = (matrix_width / 10) | 0; 		 // the number of trails
+		let matrix_characters = [
+			'迎', '簡', '益', '大', '诶', '比', '西', '迪',
+			'伊', '艾', '弗', '吉', '艾', '尺', '艾', '杰',
+			'开', '艾', '勒', '艾', '马', '艾', '娜', '哦',
+			'屁', '吉', '吾', '艾', '儿', '艾', '丝', '提',
+			'伊', '吾', '维', '豆', '贝', '尔', '维', '艾',
+			'克', '斯', '吾', '艾', '贼', '德', 'ㄅ', 'ㄆ',
+			'ㄇ', 'ㄈ', 'ㄉ', 'ㄊ', 'ㄋ', 'ㄌ', 'ㄎ', 'ㄏ',
+			'ㄐ', 'ㄒ', 'ㄓ', 'ㄔ', 'ㄕ', 'ㄖ', 'ㄗ', 'ㄘ',
+			'ㄙ', 'ㄨ', 'ㄩ', 'ㄚ', 'ㄛ', 'ㄜ', 'ㄝ', 'ㄞ',
+			'ㄟ', 'ㄠ', 'ㄡ', 'ㄢ', 'ㄣ', 'ㄤ', 'ㄥ', 'ㄦ'];
+
+		let trails = []; // all trails data is in this array
+		let animationIndex = null
+
+		window.onload = function () {
+
+			// disable scroll bars, horizontal and vertical
+			document.documentElement.style.overflow = 'hidden';  // firefox, chrome
+			document.body.scroll = "no"; // ie only
+
+			/*
+			 * 	Update the bottom canvas, this is the canvas where the matrix trails are drawn
+			 */
+			function updateBottomCanvas() {
+
+				// cancel the previous animation frame using the index
+				if (animationIndex != null) {
+					cancelAnimationFrame(animationIndex)
+				}
+
+				//canvas.style.webkitFilter = "blur(0.1px)";
+				canvas.height = matrix_height;
+				canvas.width = matrix_width;
+
+				matrix_trails = (matrix_width * 5)
+
+				trails = []
+				for (let i = 0; i < matrix_trails; i++) {
+
+					// each trail is an object, which has speed and x, y coordinates
+					trails.push({
+						speed: Random(matrix_speed.Min, matrix_speed.Max),
+						x: Random(0, matrix_trails), //i,
+						y: Random(-(matrix_height), 0)
+					});
+				}
+
+				// set the background to black
+				context.fillStyle = 'black';
+				context.fillRect(0, 0, matrix_width, matrix_height);
+				context.font = matrix_font;
+
+				// get the new frame index for the animation
+				animationIndex = requestAnimationFrame(step);
+			}
+
+			/*
+			 * 	Update the top canvas, this is the canvas where the System Failure message is drawn
+			 */
+			function updateTopCanvas() {
+
+				// initialize
+				let canvas2 = document.getElementById('canvas2'),
+					context2 = canvas2.getContext('2d');
+
+				// set canvas size
+				canvas2.height = matrix_height;
+				canvas2.width = matrix_width;
+
+				// draw the rectangle box
+				context2.beginPath();
+				context2.lineWidth = "3";
+				context2.strokeStyle = "#00ff72";
+				let rect = { Width: 540, Height: 80 };
+				context2.fillStyle = 'black';
+				context2.rect((matrix_width / 2 - rect.Width / 2) | 0,
+					(matrix_height / 2 - rect.Height / 2),
+					rect.Width, rect.Height);
+				context2.fill();
+				context2.stroke();
+
+				// draw the System Failure Text
+				context2.fillStyle = '#00ff72';
+				context2.textAlign = "center";
+				context2.font = '44pt Courier';
+				String.fromCharCode(65);
+				context2.fillText("SYSTEM FAILURE",
+					matrix_width / 2,
+					matrix_height / 2 + 14);
+			}
+
+			/*
+			 * Method that is called recursivly, when requesting a new animation frame, the frame rate is the
+			 * maximum available, fps for the browser of the user.
+			 */
+			function step() {
+
+				// change background, width black color slightly increasing black color
+				// wich creates the tail fading effect
+				context.fillStyle = 'rgba(0,0,0, 0.1)';
+				context.fillRect(0, 0, matrix_width, matrix_height);
+				context.fillStyle = matrix_color;  
+
+				// for each trail update character and move down
+				for (let i = 0; i < trails.length; i++) {
+
+					// for each trail generate new random character, and move the trail down using the speed
+					let random_character = matrix_characters[Random(0, matrix_characters.length - 1)];
+					context.fillText(random_character, trails[i].x * 10, trails[i].y + 10);
+					trails[i].y += trails[i].speed;
+
+					// if the trail reaches the end of the screen, we generate random position and speed
+					if (trails[i].y > matrix_height) {
+						trails[i].x = Random(0, matrix_trails);
+						trails[i].y = -(matrix_height);
+						trails[i].speed = Random(matrix_speed.Min, matrix_speed.Max);
+					}
+				}
+
+				// recursivly call the same method, that way creating a infinite loop
+				animationIndex = requestAnimationFrame(step);
+			}
+
+			window.addEventListener("resize", function () {
+				matrix_height = window.innerHeight || document.body.clientHeight;   // the drawing height
+				matrix_width = window.innerWidth || document.body.clientWidth;      // the drawing width 
+
+				updateBottomCanvas()
+				updateTopCanvas();
+			});
+
+			updateBottomCanvas()
+			updateTopCanvas();
+		};
+	</script>
+</body>
+
+</html>
